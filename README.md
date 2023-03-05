@@ -1,6 +1,6 @@
 # qqbot-chatgpt
-使用chatgpt-3.5turbo回复的qq机器人
-https://ywt56xqv2i.feishu.cn/docx/ToIeds8H0oxPogxJzNAc8tDAnEf
+使用chatgpt-3.5turbo回复的qq机器人. 
+详细请看https://ywt56xqv2i.feishu.cn/docx/ToIeds8H0oxPogxJzNAc8tDAnEf. 
 云服务器部署
 服务器
 个人用的阿里云服务器，目前有活动可以白嫖
