@@ -44,13 +44,13 @@ var r = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 func chatSend(msg string) MyResp {
 	myresp := MyResp{}
-	id := r.Intn(int(^uint32(0) >> 1))
+	logId := r.Intn(int(^uint32(0) >> 1))
 	if strings.Compare(msg, "") == 0 {
-		myresp.Msg = "null"
+		myresp.Msg = "null, logId: " + strconv.Itoa(logId)
 		return myresp
 	}
 
-	fmt.Println(strconv.Itoa(id) + msg)
+	fmt.Println(strconv.Itoa(logId) + msg)
 
 	urlstr := "https://api.openai.com/v1/chat/completions"
 	method := "POST"
@@ -67,7 +67,7 @@ func chatSend(msg string) MyResp {
 	proxyAddress, _ := url.Parse(proxy)
 
 	client := &http.Client{
-		Timeout: 60 * time.Second,
+		Timeout: 120 * time.Second,
 		Transport: &http.Transport{
 			Proxy: http.ProxyURL(proxyAddress),
 		},
@@ -80,9 +80,6 @@ func chatSend(msg string) MyResp {
 		return myresp
 	}
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("User-Agent", "Chrome/75.0.3770.142")
-	req.Header.Add("Accept", "*/*")
-	req.Header.Add("Accept-Encoding", "gzip, deflate, br")
 	req.Header.Add("Authorization", "Bearer {your api-key}")
 
 	send := true
@@ -91,7 +88,7 @@ func chatSend(msg string) MyResp {
 		for send {
 			time.Sleep(5 * time.Second)
 			i += 5
-			println(strconv.Itoa(id) + " wait " + strconv.Itoa(i) + "s")
+			println(strconv.Itoa(logId) + " wait " + strconv.Itoa(i) + "s")
 		}
 	}()
 	res, err := client.Do(req)
@@ -99,7 +96,7 @@ func chatSend(msg string) MyResp {
 
 	if err != nil {
 		fmt.Println(err)
-		myresp.Msg = "send err"
+		myresp.Msg = "send err, logId: " + strconv.Itoa(logId)
 		return myresp
 	}
 	defer res.Body.Close()
@@ -107,13 +104,15 @@ func chatSend(msg string) MyResp {
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		fmt.Println(err)
-		myresp.Msg = "io read err"
+		myresp.Msg = "io read err, logId: " + strconv.Itoa(logId)
 		return myresp
 	}
 
 	resp := Resp{}
 	if err := json.Unmarshal(body, &resp); err != nil {
-		myresp.Msg = "json err"
+		bodyString := ""
+		json.Unmarshal(body, &bodyString)
+		myresp.Msg = "json err, logId: " + strconv.Itoa(logId) + " " + string(body)
 		return myresp
 	}
 
@@ -122,7 +121,7 @@ func chatSend(msg string) MyResp {
 		i := i
 		content += resp.Choices[i].Message.Content
 	}
-	fmt.Println(strconv.Itoa(id) + ":" + content)
+	fmt.Println(strconv.Itoa(logId) + ":" + content)
 	myresp.Msg = content
 	return myresp
 }
@@ -135,15 +134,18 @@ type Resp struct {
 	Usage   Usage     `json:"usage"`
 	Choices []Choices `json:"choices"`
 }
+
 type Usage struct {
 	PromptTokens     int `json:"prompt_tokens"`
 	CompletionTokens int `json:"completion_tokens"`
 	TotalTokens      int `json:"total_tokens"`
 }
+
 type Message struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
 }
+
 type Choices struct {
 	Message      Message `json:"message"`
 	FinishReason string  `json:"finish_reason"`
