@@ -8,31 +8,33 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"qqbot/controller"
+	"qqbot/filter"
 	"strconv"
 	"strings"
 	"time"
 )
 
+var getMethod = map[string]func(*gin.Context){
+	"/chat":  chat,
+	"/chat4": controller.Chat4,
+}
+
 func main() {
 	r := gin.Default()
-	r.GET("/chat", chat)
+	r.Use(filter.CurrentFilter)
+	regiestGet(r)
 	r.Run(":801") // port
 }
 
-var limit = 0
-var lastUpdate = time.Now()
+func regiestGet(engine *gin.Engine) {
+	for k, v := range getMethod {
+		engine.GET(k, v)
+	}
+}
 
 // TODO 实现连续对话
 func chat(c *gin.Context) {
-	// 简陋限流器
-	if time.Since(lastUpdate) > 60*time.Second {
-		limit = 0
-	}
-	if limit > 30 {
-		c.JSON(http.StatusOK, "等一会......限流了")
-	}
-
-	limit++
 	c.JSON(http.StatusOK, chatSend(c.Query("msg")))
 }
 
